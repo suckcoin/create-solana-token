@@ -6,13 +6,8 @@ import {
   clusterApiUrl,
   sendAndConfirmTransaction,
 } from "@solana/web3.js";
-import {
-  DataV2,
-  createCreateMetadataAccountV2Instruction,
-  createUpdateMetadataAccountV2Instruction,
-} from "@metaplex-foundation/mpl-token-metadata";
-import { findMetadataPda } from "@metaplex-foundation/js";
 import fs from "fs";
+import { createCreateMetadataAccountV3Instruction, PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata';
 
 let connection = new Connection(clusterApiUrl("mainnet-beta"), "confirmed");
 
@@ -30,79 +25,41 @@ async function createMetadata({
   tokenUrl: string;
 }) {
   const mint = new PublicKey(tokenMint);
-  const metadataPDA = await findMetadataPda(mint);
-  const tokenMetadata = {
-    name: tokenName,
-    symbol: tokenSymbol,
-    uri: tokenUrl,
-    sellerFeeBasisPoints: 0,
-    creators: null,
-    collection: null,
-    uses: null,
-  } as DataV2;
 
-  const updateMetadataTransaction = new Transaction().add(
-    createCreateMetadataAccountV2Instruction(
-      {
-        metadata: metadataPDA,
-        updateAuthority: publicKey,
-        mint: mint,
-        mintAuthority: publicKey,
-        payer: publicKey,
-      },
-      {
-        createMetadataAccountArgsV2: {
-          data: tokenMetadata,
-          isMutable: true,
-        },
-      }
-    )
-  );
-  await sendAndConfirmTransaction(connection, updateMetadataTransaction, [
-    keypair,
-  ]);
-}
-
-async function updateMetadata({
-  publicKey,
-  tokenMint,
-  tokenName,
-  tokenSymbol,
-  tokenUrl,
-}: {
-  publicKey: PublicKey;
-  tokenMint: string;
-  tokenName: string;
-  tokenSymbol: string;
-  tokenUrl: string;
-}) {
-  const mint = new PublicKey(tokenMint);
-  const metadataPDA = await findMetadataPda(mint);
-  const tokenMetadata = {
-    name: tokenName,
-    symbol: tokenSymbol,
-    uri: tokenUrl,
-    sellerFeeBasisPoints: 0,
-    creators: null,
-    collection: null,
-    uses: null,
-  } as DataV2;
-
-  const updateMetadataTransaction = new Transaction().add(
-    createUpdateMetadataAccountV2Instruction(
-      {
-        metadata: metadataPDA,
-        updateAuthority: publicKey,
-      },
-      {
-        updateMetadataAccountArgsV2: {
-          data: tokenMetadata,
+      const createMetadataInstruction = createCreateMetadataAccountV3Instruction(
+        {
+          metadata: PublicKey.findProgramAddressSync(
+            [
+              Buffer.from("metadata"),
+              PROGRAM_ID.toBuffer(),
+              mint.toBuffer(),
+            ],
+            PROGRAM_ID,
+          )[0],
+          mint: mint,
+          mintAuthority: publicKey,
+          payer: publicKey,
           updateAuthority: publicKey,
-          primarySaleHappened: true,
-          isMutable: true,
         },
-      }
-    )
+        {
+          createMetadataAccountArgsV3: {
+            data: {
+              name: tokenName,
+              symbol: tokenSymbol,
+              uri: tokenUrl,
+              creators: null,
+              sellerFeeBasisPoints: 0,
+              uses: null,
+              collection: null,
+            },
+            isMutable: false,
+            collectionDetails: null,
+          },
+        },
+      );
+
+  const updateMetadataTransaction = new Transaction().add(
+    createMetadataInstruction
   );
   await sendAndConfirmTransaction(connection, updateMetadataTransaction, [
     keypair,
@@ -110,7 +67,7 @@ async function updateMetadata({
 }
 
 const privateKeyFile = fs.readFileSync(
-  "/Users/brian/.config/solana/coin-keypair.json"
+  "my-keypair0.json"
 );
 let privateKeySeed = JSON.parse(privateKeyFile.toString()).slice(0, 32);
 let keypair = Keypair.fromSeed(Uint8Array.from(privateKeySeed));
@@ -118,8 +75,8 @@ console.log("Token update authority:", keypair.publicKey.toString());
 
 createMetadata({
   publicKey: keypair.publicKey,
-  tokenMint: "7uVii1LGC5jCJAgHHmLqKZP3bpNtJS6ywHW6CUSocuyD",
-  tokenName: "BUOY",
-  tokenSymbol: "BUOY",
-  tokenUrl: "https://arweave.net/Wtvd6MvCBO_ZXbLcR20mHDhBx2Bwpx_xZSb3OM_cDzg",
+  tokenMint: "kRuVpT9jvnjfiBoVL8c9bp5ixTPBJRrq19ftdibpump",
+  tokenName: "Suckcoin",
+  tokenSymbol: "Suckcoin",
+  tokenUrl: "https://arweave.net/TQpABaCzYmdmnlY0DKYE63xp-qf7-dajevqcl4b3oWo",
 });
