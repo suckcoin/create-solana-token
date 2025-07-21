@@ -25,39 +25,37 @@ async function createMetadata({
   tokenUrl: string;
 }) {
   const mint = new PublicKey(tokenMint);
-
-      const createMetadataInstruction = createCreateMetadataAccountV3Instruction(
-        {
-          metadata: PublicKey.findProgramAddressSync(
-            [
-              Buffer.from("metadata"),
-              PROGRAM_ID.toBuffer(),
-              mint.toBuffer(),
-            ],
-            PROGRAM_ID,
-          )[0],
-          mint: mint,
-          mintAuthority: publicKey,
-          payer: publicKey,
-          updateAuthority: publicKey,
+  const createMetadataInstruction = createCreateMetadataAccountV3Instruction(
+    {
+      metadata: PublicKey.findProgramAddressSync(
+        [
+          Buffer.from("metadata"),
+          PROGRAM_ID.toBuffer(),
+          mint.toBuffer(),
+        ],
+        PROGRAM_ID,
+      )[0],
+      mint: mint,
+      mintAuthority: publicKey,
+      payer: publicKey,
+      updateAuthority: publicKey,
+    },
+    {
+      createMetadataAccountArgsV3: {
+        data: {
+          name: tokenName,
+          symbol: tokenSymbol,
+          uri: tokenUrl,
+          creators: null,
+          sellerFeeBasisPoints: 0,
+          uses: null,
+          collection: null,
         },
-        {
-          createMetadataAccountArgsV3: {
-            data: {
-              name: tokenName,
-              symbol: tokenSymbol,
-              uri: tokenUrl,
-              creators: null,
-              sellerFeeBasisPoints: 0,
-              uses: null,
-              collection: null,
-            },
-            isMutable: false,
-            collectionDetails: null,
-          },
-        },
-      );
-
+        isMutable: false,
+        collectionDetails: null,
+      },
+    },
+  );
   const updateMetadataTransaction = new Transaction().add(
     createMetadataInstruction
   );
